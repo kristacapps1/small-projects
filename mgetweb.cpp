@@ -51,13 +51,10 @@ static int totbytes;
 static void *copy_file(void *ptr);
 
 struct thdata{
-    //char *buff;
     char *thdl;
     char *hostname;
     int thrdfp;
     int thrdfd2;
-    //int rngbegin;
-    //int rngend;
     int clen;
     int tid;
     pthread_rwlock_t rdlock;
@@ -66,7 +63,7 @@ struct thdata{
 
 int main(int argc, char*argv[])
 {
-    //File descriptors
+    /*File descriptors*/
     int fd;
     int fd2;
     int thrd;
@@ -75,7 +72,8 @@ int main(int argc, char*argv[])
     int temp;
     int err;
     pid_t childpid = 0;
-    /////for http requests and socket
+    
+    /*for http requests and socket*/
     int char1;
     int sockfd;
     int port=80;
@@ -95,16 +93,12 @@ int main(int argc, char*argv[])
     int j;
     int contentlength;
     size_t strfind;
-    //create buffer, file pointers
-    //char *buff;
-    //
-    //char *buffend;
-    //char *fn = argv[1];
-    //fd = open(fn, O_RDONLY);
-    //////////////////////////////////////////////////////////////////////////////
-    //partitioning url//
-    
-    //get past initial http://
+
+    /*//////////////////////////////////////////////////////////////////////////////////////////
+        partitioning url
+    //////////////////////////////////////////////////////////////////////////////////////////*/
+        
+    //get past initial http:// in format
     for(int im=0;host[im]!='\0';im++){
         if(host[im]=='/'){
             if(host[im+1]=='/'){
@@ -159,14 +153,12 @@ int main(int argc, char*argv[])
         filename[m]=host[fln];
         m++;
     }
-    //printf("filename: %s\n",filename);
-    ///////////////////////////////////////////////////////////////////////////////////////////
-    //opening socket connection//
+    
+    /*///////////////////////////////////////////////////////////////////////////////////////////
+        opening socket connection
+    ///////////////////////////////////////////////////////////////////////////////////////////*/
     
     hostname[j-flag]='\0';
-    //printf("%s\n",hostname);
-    //printf("%d\n",strlen(hostname));
-    //printf("download:%s\n",dl);
     if((sockfd=socket(AF_INET,SOCK_STREAM,0))==-1)
         perror("Failed to create socket");
     
@@ -189,17 +181,16 @@ int main(int argc, char*argv[])
     if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
         perror("ERROR with connection");
     
-    /////////////////////////////////////////////////////////////////////////////
-    //get header//
+    /*//////////////////////////////////////////////////////////////////////////////////////////
+        Get header
+    //////////////////////////////////////////////////////////////////////////////////////////*/
     
      sprintf(req, "HEAD %s HTTP/1.1\r\nHost: %s\r\nConnection: keep-alive\r\n\r\n", dl, hostname);
      if(send(sockfd,req,strlen(req),0)<0)
      perror("ERROR request failed");
-     
+    
      bzero(headerbuff,sizeof(headerbuff));
-     //int flag2=0;
      bytes=recv(sockfd,headerbuff,sizeof(headerbuff)-1,0);
-     //printf("HEADERSTUFFS: \n%s\n\n",headerbuff);
      clptr=strstr(headerbuff,"Content-Length: ");
      clptr+=16;
      m=0;
@@ -207,48 +198,37 @@ int main(int argc, char*argv[])
      clbuff[m]=*htmp;
      m++;
      }
-     //printf("LENGTH OF CONTENTS: %s\n\n",clbuff);
      contentlength=atoi(clbuff);
-     //printf("LENGTH OF CONTENTS INT: %d\n\n",contentlength);
-     //printf("MAXIMUM STRING LENGTH: %d",);
-    /////////////////////////////////////////////////////////////////////////////
+    
+    /*////////////////////////////////////////////////////////////////////////////
+        Opening and partitioning file and Thread handling
+    ////////////////////////////////////////////////////////////////////////////*/
+    
     char *fn2 = filename;
-    //fd2 = open(fn2, O_RDWR | O_CREAT,S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     fd2 = open(fn2, O_WRONLY | O_CREAT ,S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-    //printf("getting ranges\n");
     temp = contentlength/thrd_cnt;
     int leftover = contentlength%thrd_cnt;
-    //printf("leftovers:%d\n",leftover);
     begins=0;
     ends=temp;
-    //thread initializations
+    
+    /*thread initializations*/
     pthread_t threads[thrd_cnt];
     thdata data1[thrd_cnt];
-    //printf("created locks\n");
-   // if(fs < 0){ //lseek unsuccessful
-   //     printf("error in file seek\n");
-    //}
-    //else {
-        //printf("in else abouta start for\n");
-    //close(sockfd);
         for(int th1=0;th1<thrd_cnt;th1++){
             data1[th1].rdlock=rdlock;
             data1[th1].wrlock=wrlock;
-            //printf("creating thread in for\n");
-            //printf("threadnumber:%d\n",th1);
-            //    printf("thread memory allocated\n");
-                data1[th1].thrdfp=thrd;
-                data1[th1].thdl=dl;
-                data1[th1].hostname=hostname;
-                data1[th1].thrdfd2=fd2;
-                data1[th1].tid=th1;
-                data1[th1].clen=contentlength;
-            //    printf("thread data assigned\n");
-                err = pthread_create(&threads[th1], NULL, copy_file,(void *) &data1[th1]);
-                if(err){
-                    printf("Error creating thread %d\n",th1);
-                }
+            data1[th1].thrdfp=thrd;
+            data1[th1].thdl=dl;
+            data1[th1].hostname=hostname;
+            data1[th1].thrdfd2=fd2;
+            data1[th1].tid=th1;
+            data1[th1].clen=contentlength;
+            err = pthread_create(&threads[th1], NULL, copy_file,(void *) &data1[th1]);
+            if(err){
+                 printf("Error creating thread %d\n",th1);
+            }
         }
+    /*retrieve threads*/
     for(int thct=0;thct<thrd_cnt;thct++){
         pthread_join(threads[thct], NULL);
     }
@@ -259,10 +239,9 @@ int main(int argc, char*argv[])
 static void *copy_file(void *ptr){
     thdata *data;
     data = (thdata *) ptr;
-    //printf("INITITAL THREAD ID:%d\n\n",data->tid);
-    //lock
+
+    /*lock file for read*/
     ssize_t br;
-    //printf("declaring thread data\n");
     int sockfd;
     int bytes,rdbytes;
     int flag2=0;
@@ -273,24 +252,23 @@ static void *copy_file(void *ptr){
     int error;
     char req[1024];
     char ip[100];
-        //char buff[data->rngend-data->rngbegin+1024];
-        //char buff2[data->rngend-data->rngbegin+1024];
     char buff[5120];
     char bufftmp[1024];
     char buff2[2048];
-    //printf("SIZE OF BUFF2:%d\n",sizeof(buff2));
-    //char tmpbuff[sizeof(data->buff)];
-    //printf("the basics declared\n");
+
     struct hostent *host_server;
     struct sockaddr_in serv_addr;
     struct in_addr **al;
-    ///////////////////////////////////////////////////////////////////////////////////////////
-    //reuse thread//
+    
+    /*reuse thread from thread pool*/
     if ((error = pthread_mutex_lock(&bufferlock))!=0){
         printf("returning error\n");
         //return error;
     }
+    
+    /*read data until we have specified data segment size determined by number of threads*/
     while(totbytes<data->clen){
+        /*debug statements to track thread lock operations*/
         //printf("locking lock1 for thread %d\n",data->tid);
         //printf("THREAD ID:%d\n\n",data->tid);
         tmpbytes=totbytes;
@@ -304,41 +282,30 @@ static void *copy_file(void *ptr){
             printf("returning error\n");
             //return error;
         }
+        /*debug statements to track thread lock operations*/
         //printf("unlocking lock1 for thread %d\n",data->tid);
         //printf("\nTHREAD ID:%d\n\n",data->tid);
-    //bzero(data->buff,sizeof(data->buff));
-    ///////////////////////////////////////////////////////////////////////////////////////////
-    //opening socket connection//
-    
-    //hostname[j-flag]='\0';
-    //printf("%s\n",data->hostname);
-    //printf("%d\n",strlen(hostname));
-    //printf("download:%s\n",dl);
-        //printf("in thrd\n");
+
+    /*create socket and retrieve server information*/
         if((sockfd=socket(AF_INET,SOCK_STREAM,0))==-1)
             perror("Failed to create socket\n");
-    //printf("sockfd: %d\n",sockfd);
         host_server=gethostbyname(data->hostname);
         if (host_server == NULL) perror("ERROR, no such host\n");
     
         bzero((char *) &serv_addr, sizeof(serv_addr));
-    
         al=(struct in_addr**)host_server->h_addr_list;
         strcpy(ip , inet_ntoa(*al[0]));
         bcopy((char *)host_server->h_addr,
-          (char *)&serv_addr.sin_addr.s_addr,
-          host_server->h_length);
-    
-    //printf ("Name: %s\n", host_server->h_name);
-    //printf ("IP: %s\n", ip);
-    
+             (char *)&serv_addr.sin_addr.s_addr,
+             host_server->h_length);
+        
+    /*open port and connect*/
         serv_addr.sin_family=AF_INET;
         serv_addr.sin_port=htons(80);
         if (connect(sockfd,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0)
             perror("ERROR with connection");
     
-    ////////////////////////////////////////////////////////////////////////////////
-    //download data//
+    /*download data*/
         if(tmpbytes==0){
             tmpstart=tmpbytes;
             tmpend=tmpbytes+5119;
@@ -347,21 +314,15 @@ static void *copy_file(void *ptr){
             tmpstart=tmpbytes+1;
             tmpend=tmpbytes+5120;
         }
-    //printf("[%d]RANGE: %d-%d\n\n",data->tid,tmpstart,tmpend);
+
         sprintf(req, "GET %s HTTP/1.1\r\nHost: %s\r\nConnection: keep-alive\r\nRange: bytes=%d-%d\r\n\r\n", data->thdl, data->hostname,tmpstart,tmpend);
-        //printf("[%d]Reading from web:%d\n",data->tid,tmpstart);
-        if(send(sockfd,req,strlen(req),0)<0)
-        perror("ERROR request failed");
+        if(send(sockfd,req,strlen(req),0)<0){perror("ERROR request failed");}
         bzero(bufftmp,sizeof(bufftmp));
         char* clptr;
         rdbytes=0;
         flag2=0;
-        /*if ((error = pthread_mutex_lock(&socklock))!=0){
-            printf("returning error\n");
-        }*/
-    while((bytes=recv(sockfd,bufftmp,sizeof(bufftmp),0))>0){
-        
-        //printf("[%d] %d bytes read from rcv\n",data->tid,bytes);
+    /*recieve data from socket into buffer*/
+    while((bytes=recv(sockfd,bufftmp,sizeof(bufftmp),0))>0){        
         usleep(10000);
         if(flag2==0){    //get rid of header for first rcv
             int findcl;
@@ -374,8 +335,6 @@ static void *copy_file(void *ptr){
                     }
                 }
             }
-            //char buff2[sizeof(bufftmp)-findcl];
-            //bzero(buff2,sizeof(buff2));
             m=0;
             int rdtmp;
             int tmp=findcl;
@@ -383,15 +342,10 @@ static void *copy_file(void *ptr){
                 buff[rdtmp]=bufftmp[tmp];
                 tmp++;
                 m++;
-                //printf("[%d]buff[%d] = %c\n",data->tid,rdtmp,buff[rdtmp]);
-                //printf("[%d]bufftmp[%d] = %c\n",data->tid,tmp,bufftmp[tmp]);
             }
-            //printf("[%d] tmp: %d m: %d rdtmp: %d\n",data->tid,tmp,m,rdtmp);
             rdbytes+=rdtmp;
         }
         else{
-           //memcpy(&buff,&bufftmp,bytes);
-           //usleep(1000);
             int elem=0;
             for(int rdtmp=rdbytes;rdtmp<=(rdbytes+bytes);rdtmp++){
                 buff[rdtmp]=bufftmp[elem];
@@ -400,34 +354,24 @@ static void *copy_file(void *ptr){
             rdbytes+=bytes;
             bzero(bufftmp,sizeof(bufftmp));
         }
-        //printf("[%d] %d bytes in final buffer\n[%d]NEWBUFF CONTENTS:%s\n\n",data->tid,bytes,data->tid,buff);
     }
 
-        //printf("[%d]rdbytes:%d\nbuffer size: %d\n",data->tid,rdbytes,strlen(buff));
-
-        //printf("locking lock for write for thread%d\n",data->tid);
+    /* lock for file write operation */
     if ((error = pthread_mutex_lock(&totallock))!=0){
         printf("returning error\n");
     }
         if(lseek(data->thrdfd2,tmpstart,SEEK_SET)<0){
             perror("error in lseek");
         }
-        //printf("[%d]writing %d bytes to file\n",data->tid,rdbytes);
         if((br = write(data->thrdfd2,buff,rdbytes))<=0){
             printf("[%d]error writing to file, or nothing written",data->tid);
         }
-        else{
-            //printf("[%d]bytes written to file:%d\n",data->tid,br);
-        }
-    //printf("[%d]Writing data:%d\n",data->tid,tmpstart);
         
     if ((error = pthread_mutex_unlock(&totallock))!=0){
         printf("returning error\n");
     }
-    //printf("unlocking lock 2 for thread%d\n",data->tid);
-    //pthread_mutex_unlock(&totallock);
     close(sockfd);
-    //unlock
+    /* unlock file after write finishes */
     memset(buff2,0,sizeof(buff2));
     memset(buff,0,sizeof(buff));
     bzero(buff,sizeof(buff));
@@ -441,7 +385,7 @@ static void *copy_file(void *ptr){
         printf("returning error\n");
         //return error;
     }
-    //printf("made it to end of thread\n");
+    /* End of thread task*/
 }
 
 
