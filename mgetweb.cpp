@@ -15,7 +15,6 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <sys/stat.h>
-#include <resolv.h>
 #include <netinet/in.h>
 #include <netdb.h>
 #include <sys/socket.h>
@@ -29,16 +28,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/socket.h>
 #include <resolv.h>
-#include <netdb.h>
-#include<stdio.h>
-#include<stdlib.h>
 
 static pthread_rwlock_t rdlock = PTHREAD_RWLOCK_INITIALIZER;
 static pthread_rwlock_t wrlock = PTHREAD_RWLOCK_INITIALIZER;

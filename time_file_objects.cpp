@@ -15,7 +15,6 @@
 #include <signal.h>
 #include <errno.h>
 #include "buffer.h"
-//#include "msgqueuelog.h"
 #include <sys/stat.h>
 #include <sys/msg.h>
 #include <sys/types.h>
@@ -54,7 +53,7 @@ static int timepipe(int *fd,char *buff, char *buff1, int fs){
     wait(&pid);             //parent wait for child to join
     gettimeofday(&tpend, NULL);
     tottime=1000000L*(tpend.tv_sec-tpstart.tv_sec)+(tpend.tv_usec-tpstart.tv_usec);
-    printf("copytime for unnamed pipe: %dmusec\n",tottime);
+    printf("copytime for unnamed pipe: %ldmusec\n",tottime);
     fs=pid;
     return fs;
 }
@@ -87,7 +86,7 @@ static int timefifo(int *fd,char *buff, char *buff1, int fs){
     wait(&pid);             //parent wait for child to join
     gettimeofday(&tpend, NULL);
     tottime=1000000L*(tpend.tv_sec-tpstart.tv_sec)+(tpend.tv_usec-tpstart.tv_usec);
-    printf("copytime for fifo: %dmusec\n",tottime);
+    printf("copytime for fifo: %ldmusec\n",tottime);
     fs=pid;
     return fs;
 }
@@ -128,7 +127,7 @@ static int timemsgq(int *fd,char *buff, char *buff1, int fs){
     wait(&pid);                 //wait for child to join
     gettimeofday(&tpend, NULL);
     tottime=1000000L*(tpend.tv_sec-tpstart.tv_sec)+(tpend.tv_usec-tpstart.tv_usec);
-    printf("copytime for message queue: %dmusec\n",tottime);
+    printf("copytime for message queue: %ldmusec\n",tottime);
     fs=pid;
     return fs;
 }
